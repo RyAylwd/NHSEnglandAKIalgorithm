@@ -3,7 +3,7 @@
 *The following 3 variables are required in long format:
  *the variable 'creatinine' is C1 in the algorithm
  *the variable 'date' is either the creatinine collection date of the blood sample or the date of the alert. In this do file, date should be formated as %d. If date is in %tc format, then change all loops to: gen date_day = date/86400000 to convert milliseconds into days 
- *pat is the patient ID: change this to your ID variable 
+ *'pat' is the patient ID: change this to your ID variable 
  
 ********************************************************************************
 *Data preparation
