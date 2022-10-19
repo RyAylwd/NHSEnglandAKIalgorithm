@@ -5,6 +5,8 @@
  *the variable 'date' is either the creatinine collection date of the blood sample or the date of the alert. In this do file, date should be formated as %d. If date is in %tc format, then change all loops to: gen date_day = date/86400000 to convert milliseconds into days 
  *'pat' is the patient ID: change this to your ID variable 
  
+ *generates the following variables: rv1 ratio1 rv2 ratio2 rv ratio creat_diff warning_flag alert no_flag low_flag high_flag
+ 
 ********************************************************************************
 *Data preparation
 
@@ -281,7 +283,7 @@ drop creatinine1-date* // substitute * with maximum n
 drop date_hour0-diff48h* // substitute * with maximum n
 
 **********
-order pat date creatinine rv1 ratio1 rv2 ratio2 rv ratio creat_diff warning_flag alert
+order pat date creatinine rv1 ratio1 rv2 ratio2 rv ratio creat_diff warning_flag alert no_flag low_flag high_flag
 
 *save alert data file and delete files no longer required 
 
