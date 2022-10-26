@@ -1,11 +1,12 @@
 *NHS England AKI detection algorithm code 
 *written by Ryan Aylward
+
 *The following 3 variables are required in long format:
  *the variable 'creatinine' is C1 in the algorithm (umol/L)
- *the variable 'date' is either the creatinine collection date of the blood sample or the date of the alert. In this do file, date should be formated as %d. If date is in %tc format, then change all loops to: gen date_day = date/86400000 to convert milliseconds into days 
+ *the variable 'date' is the creatinine collection date of the blood sample. In this do file, date should be formated as %d. If date is in %tc format, then change all loops to: gen date_day = date/86400000 to convert milliseconds into days 
  *'pat' is the numeric patient ID: change this to your ID variable 
  
- *generates the following variables: rv1 ratio1 rv2 ratio2 rv ratio creat_diff warning_flag alert no_flag low_flag high_flag
+ *variables generated: rv1 ratio1 rv2 ratio2 rv ratio creat_diff warning_flag alert no_flag low_flag high_flag
  
 ********************************************************************************
 *Data preparation
@@ -15,7 +16,7 @@ use "data.dta", clear // change this to your data file name
 
 *the long data format is first converted to a wide dataset and then re-combined with its own long data
 
-*OPTIONAL: split dataset to reduce computational load if there are a large number of patients or alerts. If this is required, create a master do file that executes the algorithm in each split dataset separately, and then append all the split datasets once complete. 
+*OPTIONAL: split dataset to reduce computational load if there are a large number of patients or creatinine values. If this is required, create a master do file that executes the algorithm in each split dataset separately, and then append all the split datasets once complete. 
 cd "Split 1" // change working directory as desired 
 keep if pat<= // for example if you have 100 000 patients, you might want to split into 2*50 000 each. it is faster to split and combine than to execute all patients at the same time
 bysort pat (date) : gen n = _n // number of alerts per person
