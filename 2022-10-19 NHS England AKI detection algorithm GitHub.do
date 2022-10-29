@@ -273,7 +273,7 @@ recode alert (0=3) if ratio>=3 & ratio!=.
 
 ***********
 *8* AKI 2
-recode alert (0=2) if ratio>= 2 & ratio`i'<3 
+recode alert (0=2) if ratio>= 2 & ratio<3 
 
 ***********
 *9* AKI 1
