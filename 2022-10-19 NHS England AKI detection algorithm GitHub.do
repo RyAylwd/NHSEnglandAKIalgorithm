@@ -269,15 +269,15 @@ recode warning_flag (0=1) if diff48h`i'>-48 & diff48h`i'<-168 & ratio<1.5 // 168
 *7* AKI 3
 *if the difference between creatinine values C1 - rv1/2 is >354umol/l - flag as stage 3
 recode alert (0=3) if ratio>=1.5 & creat_diff>354 & creat_diff!=. & ratio!=.
-recode alert (0=3) if ratio`i'>=3 & ratio!=.
+recode alert (0=3) if ratio>=3 & ratio!=.
 
 ***********
 *8* AKI 2
-recode alert (0=2) if ratio`i'>= 2 & ratio`i'<3 
+recode alert (0=2) if ratio>= 2 & ratio`i'<3 
 
 ***********
 *9* AKI 1
-recode alert (0=1) if ratio`i'>= 1.5 & ratio<2
+recode alert (0=1) if ratio>= 1.5 & ratio<2
 
 *drop redundant variables
 drop creatinine1-date* // substitute * with maximum n
