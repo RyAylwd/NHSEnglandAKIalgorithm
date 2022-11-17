@@ -256,13 +256,13 @@ replace diff48h`i'=. if diff48h`i'>=0
 
 *generate alert flag AKI stage 1
 forvalues i=1/n {  // subsitute n for the maximum of n in your dataset 
-recode alert (0=1) if ratio<1.5 & creat_diff>26 & diff48h`i' >-48 & diff48h`i'!=.
+recode alert (0=1) if ratio<1.5 & creat_diff>26 & diff48h`i' >-48 & diff48h`i'<0
 }
 
 *create variable that indicates that increase within 7 days but not within 48h
 gen warning_flag = 0
 forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
-recode warning_flag (0=1) if diff48h`i'>-48 & diff48h`i'<-168 & ratio<1.5 // 168 hours in 7 days
+recode warning_flag (0=1) if diff48h`i'>-48 & diff48h`i'<-168 & ratio<1.5 & creat_diff>26 // 168 hours in 7 days
 }
 
 ***********
