@@ -100,7 +100,7 @@ recode low_flag (0=1) if creatinine < lab_lower_range & diff365_yn`i'==0
 *if creatinine high - flag high
 gen high_flag = 0
 forvalues i=1/`number' {  
-recode high_flag (0=1) if creatinine > lab_upper_range & diff365_yn`i'==0 & creatinine<.
+recode high_flag (0=1) if creatinine > lab_upper_range & diff365_yn`i'==0 & creatinine!=.
 }
 
 *drop redundant variables
