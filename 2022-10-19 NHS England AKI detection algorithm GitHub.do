@@ -6,7 +6,7 @@
  *the variable 'date' is the creatinine collection date of the blood sample. In this do file, date should be formated as %d. If date is in %tc format, then change all loops to: gen date_day = date/86400000 to convert milliseconds into days 
  *'pat' is the numeric patient ID: change this to your ID variable 
  
- *variables generated: rv1 ratio1 rv2 ratio2 rv ratio creat_diff warning_flag alert no_flag low_flag high_flag
+ *variables generated: rv1 ratio1 rv2 ratio2 rv ratio creat_diff dee warning_flag alert no_flag low_flag high_flag
  
 ********************************************************************************
 *Data preparation
@@ -233,33 +233,45 @@ gen creat_diff = creatinine-rv
 gen alert=0 // no AKI
 
 ***********
-*6* 48h criteria AKI 1
+*6* 48h criteria AKI 1 - called 'D' in algorithm, here called 'dee', 2 days is substituted for 48 hours. If %tc datetime available, convert milliseconds into hours by dividing date /3600000 and substituting days with hours. 
 
-*change date to hours
-gen date_hour0 = date/3600000 // if date is in milliseconds - divide /86400000
-forvalues i=1/`number' { 
-gen date_hour`i' = date`i'/3600000
+forvalues i=1/`number' {
+gen date_day`i' = date`i'
 }  
- 
-*create a new variable of the difference between dates in hours
-forvalues i=1/`number' {  
-gen diff48h`i' = date_hour`i'-date_hour0
+
+*create a new variable of the difference between dates
+forvalues i=1/`number' {
+gen diff2d`i' = date_day`i'-date
 }
 
-*replace 0 and positive differences with missing values
-forvalues i=1/`number' { 
-replace diff48h`i'=. if diff48h`i'>=0
+*replace 0 and positive differences with missings
+forvalues i=1/`number' {
+replace diff2d`i'=. if diff2d`i'>=0
 }
+
+*create a dummy variable that indicates difference is 0 - 2 days
+forvalues i=1/`number' {
+gen diff2d_yn`i' = 0
+recode diff2d_yn`i' (0=1) if diff2d`i'>-2 & diff2d`i'<=0
+}
+
+rename creatinine creat //so that creatinine is not included in rowmin creatinine* calculation 
+*find lowest creat within 48 h 
+forvalues i=1/`number' {
+replace creatinine`i'=. if diff2d_yn`i'==0 //only 0-2days creatinine values are used and any values outside of these dates are set to missing
+}
+egen low = rowmin(creatinine*) //lowest creatinine value within 2 days 
+gen dee = creat - low // current creatinine minus the lowest creatinine in the last 2 days 
 
 *generate alert flag AKI stage 1
-forvalues i=1/`number' {  
-recode alert (0=1) if ratio<1.5 & creat_diff>26 & diff48h`i' >-48 & diff48h`i'<0
-}
+forvalues i=1/`number' {
+recode central_alert (0=1) if ratio<1.5 & dee>26 & diff2d`i'>=-2 & diff2d`i'<=0
+} // AKI stage 1 
 
-*create variable that indicates that increase within 7 days but not within 48h
+*create variable that indicates that increase within 7 days but not within 2 days 
 gen warning_flag = 0
-forvalues i=1/`number' {  
-recode warning_flag (0=1) if diff48h`i'>-48 & diff48h`i'<-168 & ratio<1.5 & creat_diff>26 // 168 hours in 7 days
+forvalues i=1/`number' {
+recode warning_flag (0=1) if diff2d`i'>-7 & diff2d`i'<-2 & ratio<1.5 & creat_diff>26 
 }
 
 ***********
@@ -277,11 +289,11 @@ recode alert (0=2) if ratio>= 2 & ratio<3
 recode alert (0=1) if ratio>= 1.5 & ratio<2
 
 *drop redundant variables
-drop creatinine1-date`number' 
-drop date_hour0-diff48h`number' 
+keep pat date creat rv2 ratio2 rv1 ratio1 no_flag low_flag high_flag ratio rv central_alert warning_flag creat_diff dee 
+rename creat creatinine 
 
 **********
-order pat date creatinine rv1 ratio1 rv2 ratio2 rv ratio creat_diff warning_flag alert no_flag low_flag high_flag
+order pat date creatinine rv1 ratio1 rv2 ratio2 rv ratio creat_diff dee warning_flag alert no_flag low_flag high_flag
 
 *save alert data file and delete files no longer required 
 
