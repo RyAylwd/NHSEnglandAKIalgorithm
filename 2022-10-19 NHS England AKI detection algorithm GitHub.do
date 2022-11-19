@@ -226,7 +226,7 @@ replace rv2=. if ratio1>ratio2 & ratio1!=. & ratio2!=.
 gen rv = rv1
 replace rv = rv2 if ratio2>ratio1 & ratio2!=. & ratio1!=.
 
-*calculate the difference between C1 and reference creatinine. Called 'D' in algorithm flowchart 
+*calculate the difference between C1 and reference creatinine 
 gen creat_diff = creatinine-rv 
 
 *generate AKI alerts
