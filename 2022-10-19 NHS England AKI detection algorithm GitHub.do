@@ -20,9 +20,12 @@ use "data.dta", clear // change this to your data file name
 cd "Split 1" // change working directory as desired 
 keep if pat<= // for example if you have 100 000 patients, you might want to split into 2*50 000 each. it is faster to split and combine than to execute all patients at the same time
 bysort pat (date) : gen n = _n // number of alerts per person
-sum n, d // the maximum of n is the number of i=1/n that should be substituted for your specific data in the forvalues loop (below)
+
 save "split1.dta", replace
-  
+
+ sum n // the maximum of n is the number of i=1/n that should be substituted for your specific data in the forvalues loop (below)
+local number = r(max)
+
 *Reshape wide, so you have date1, creatinine1, date2, creatinine2 etc
 use "split1.dta", clear // Delete this line if splitting is not required
 preserve 
@@ -47,27 +50,27 @@ use "longwide split1.dta", clear
 
 *determine if there is a creatinine value in the preceding 0-365days
 gen date_day0 = date
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' {  
 gen date_day`i' = date`i'
 } 
 
 *loop over each creatinine to delete the creatinine value associated with itself
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' {
 replace creatinine`i'= . if creatinine`i'==creatinine & date_day`i'==date_day0 
 }
 
 *create variable of the difference in days
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' { 
 gen diff0365d`i' = date_day`i'-date_day0
 }
 
 *replace positive differences - become missing
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' { 
 replace diff0365d`i'=. if diff0365d`i'>0
 }
 
 *create a dummy variable that indicates difference is <365 days
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' { 
 gen diff365_yn`i' = 0
 recode diff365_yn`i' (0=1) if diff0365d`i' >-365 & diff0365d`i' <0
 }
@@ -84,24 +87,24 @@ gen lab_lower_range =
 
 *if creatinine within RI and more than 365 days - no flag
 gen no_flag = 0
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' {
 recode no_flag (0=1) if creatinine < lab_upper_range & creatinine >  lab_lower_range & diff365_yn`i'==0
 } 
 
 *if creatinine low - flag low
 gen low_flag = 0
-forvalues i=1/247 { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' { 
 recode low_flag (0=1) if creatinine < lab_lower_range & diff365_yn`i'==0
 }
 
 *if creatinine high - flag high
 gen high_flag = 0
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' {  
 recode high_flag (0=1) if creatinine > lab_upper_range & diff365_yn`i'==0 & creatinine<.
 }
 
 *drop redundant variables
-drop date_day0-diff365_yn* // substitute * with maximum n
+drop date_day0-diff365_yn`number'
 
 *save data file
 save "longwide topright split1.dta", replace
@@ -113,34 +116,34 @@ save "longwide topright split1.dta", replace
 use "longwide 7d split1.dta", clear
 
 gen date_day0 = date // if date is in milliseconds - divide /86400000
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset  
+forvalues i=1/`number' { 
 gen date_day`i' = date`i' // if date is in milliseconds - divide /86400000
 } 
 
 *loop over each creatinine to delete the creatinine value associated with itself
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' {  
 replace creatinine`i'= . if creatinine`i'==creatinine & date_day`i'==date_day0 
 }
 
 *create a new variable of the difference between dates in days
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' { 
 gen diff7d`i' = date_day`i'-date_day0
 }
 
 *replace 0 and positive differences because we are only interested in the 7days before the alert
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' { 
 replace diff7d`i'=. if diff7d`i'>=0
 }
 
 *create a dummy variable that indicates difference is 0 - 7 days
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' {  
 gen diff7_yn`i' = 0
 recode diff7_yn`i' (0=1) if diff7d`i'>-8 & diff7d`i'<0
 }
 
 rename creatinine creat //so that creatinine is not included in creatinine* rowmin calculation 
 *find minumum creatinine within 7 days
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' { 
 replace creatinine`i'=. if diff7_yn`i'==0 //only 0-7d creatinine values are used and rest are set to missing
 }
 egen rv1 = rowmin(creatinine*) //lowest creatinine value within 7d
@@ -149,7 +152,7 @@ egen rv1 = rowmin(creatinine*) //lowest creatinine value within 7d
 gen ratio1 = creat/rv1 
 
 *drop redundant variables since these have been amended - will be restored later
-drop creat creatinine1-diff7_yn* // substitute * with maximum n
+drop creat creatinine1-diff7_yn`number'
 
 *save dataset
 save "longwide 7d split1.dta", replace
@@ -160,22 +163,22 @@ save "longwide 7d split1.dta", replace
 use "longwide 365d split1.dta", clear
 
 gen date_day0 = date // if date is in milliseconds - divide /86400000
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' { 
 gen date_day`i' = date`i' // if date is in milliseconds - divide /86400000
 }  
  
 *loop over each creatinine to delete the creatinine value associated with itself
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' { 
 replace creatinine`i'= . if creatinine`i'==creatinine & date_day`i'==date_day0 
 }
 
 *create a new variable of the difference between dates in days
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' {  
 gen diff8365d`i' = date_day`i'-date_day0
 }
 
 *replace 0 and positive differences
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' {  
 replace diff8365d`i'=. if diff8365d`i'>=0
 }
 
@@ -187,7 +190,7 @@ recode diff8365_yn`i' (0=1) if diff8365d`i'>=-365 & diff8365d`i'<-8
 
 rename creatinine creat // so that creatinine is not included in rowmedian creatinine* calculation 
 *find median creat within 8 - 365 days
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' { 
 replace creatinine`i'=. if diff8365_yn`i'==0 //only 8-3665d creatinine values are used and any values outside of these dates are set to missing
 }
 egen rv2 = rowmedian(creatinine*) // median creatinine value within 8-365d
@@ -196,7 +199,7 @@ egen rv2 = rowmedian(creatinine*) // median creatinine value within 8-365d
 gen ratio2 = creat/rv2 
 
 *drop redundant variables - original values will be restored later
-drop creat creatinine1-diff8365_yn* // substitute * with maximum n
+drop creat creatinine1-diff8365_yn`number'
 
 *save dataset
 save "longwide 365d split1.dta", replace
@@ -220,8 +223,7 @@ replace rv1=. if ratio2>ratio1 & ratio2!=. & ratio1!=.
 replace rv2=. if ratio1>ratio2 & ratio1!=. & ratio2!=.
 
 *create a single rv variable that takes on rv1/2, whichever ratio is highest
-gen rv = .
-replace rv = rv1 if ratio1>ratio2 & ratio1!=. & ratio2!=.
+gen rv = rv1
 replace rv = rv2 if ratio2>ratio1 & ratio2!=. & ratio1!=.
 
 *calculate the difference between C1 and reference creatinine. Called 'D' in algorithm flowchart 
@@ -234,34 +236,29 @@ gen alert=0 // no AKI
 *6* 48h criteria AKI 1
 
 *change date to hours
-gen date_hour0 = date // if date is in milliseconds - divide /3600000
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
-gen date_hour`i' = date`i'/3600000 
+gen date_hour0 = date/3600000 // if date is in milliseconds - divide /86400000
+forvalues i=1/`number' { 
+gen date_hour`i' = date`i'/3600000
 }  
  
-*loop over each creatinine to delete the creatinine value associated with itself
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
-replace creatinine`i'= . if creatinine`i'==creatinine & date_hour`i'==date_hour0
-}
-
 *create a new variable of the difference between dates in hours
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' {  
 gen diff48h`i' = date_hour`i'-date_hour0
 }
 
 *replace 0 and positive differences with missing values
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' { 
 replace diff48h`i'=. if diff48h`i'>=0
 }
 
 *generate alert flag AKI stage 1
-forvalues i=1/n {  // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' {  
 recode alert (0=1) if ratio<1.5 & creat_diff>26 & diff48h`i' >-48 & diff48h`i'<0
 }
 
 *create variable that indicates that increase within 7 days but not within 48h
 gen warning_flag = 0
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' {  
 recode warning_flag (0=1) if diff48h`i'>-48 & diff48h`i'<-168 & ratio<1.5 & creat_diff>26 // 168 hours in 7 days
 }
 
@@ -280,8 +277,8 @@ recode alert (0=2) if ratio>= 2 & ratio<3
 recode alert (0=1) if ratio>= 1.5 & ratio<2
 
 *drop redundant variables
-drop creatinine1-date* // substitute * with maximum n
-drop date_hour0-diff48h* // substitute * with maximum n
+drop creatinine1-date`number' 
+drop date_hour0-diff48h`number' 
 
 **********
 order pat date creatinine rv1 ratio1 rv2 ratio2 rv ratio creat_diff warning_flag alert no_flag low_flag high_flag
