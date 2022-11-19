@@ -183,7 +183,7 @@ replace diff8365d`i'=. if diff8365d`i'>=0
 }
 
 *create a dummy variable that indicates difference is 8 - 365 days
-forvalues i=1/n { // subsitute n for the maximum of n in your dataset 
+forvalues i=1/`number' {  
 gen diff8365_yn`i' = 0
 recode diff8365_yn`i' (0=1) if diff8365d`i'>=-365 & diff8365d`i'<-8
 }
