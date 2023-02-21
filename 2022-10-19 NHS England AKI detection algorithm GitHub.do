@@ -265,7 +265,7 @@ gen dee = creat - low // current creatinine minus the lowest creatinine in the l
 
 *generate alert flag AKI stage 1
 forvalues i=1/`number' {
-recode central_alert (0=1) if ratio<1.5 & dee>26 & diff2d`i'>=-2 & diff2d`i'<=0
+recode central_alert (0=1) if ratio<1.5 & dee>26 & dee!=. & diff2d`i'>=-2 & diff2d`i'<=0
 } // AKI stage 1 
 
 *create variable that indicates that increase within 7 days but not within 2 days 
