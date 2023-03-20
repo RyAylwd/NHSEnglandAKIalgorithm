@@ -225,6 +225,7 @@ replace rv2=. if ratio1>ratio2 & ratio1!=. & ratio2!=.
 *create a single rv variable that takes on rv1/2, whichever ratio is highest
 gen rv = rv1
 replace rv = rv2 if ratio2>ratio1 & ratio2!=. & ratio1!=.
+replace rv = rv2 if ratio==.
 
 *calculate the difference between C1 and reference creatinine 
 gen creat_diff = creatinine-rv 
